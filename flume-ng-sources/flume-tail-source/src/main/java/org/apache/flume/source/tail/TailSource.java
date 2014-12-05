@@ -50,6 +50,7 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
         Long batchStartTime = System.currentTimeMillis();
         Long batchEndTime = batchStartTime + batchTimeUpperLimit;
         while (eventList.size() < batchSizeUpperLimit && System.currentTimeMillis() < batchEndTime) {
+            // file rotated or file removed
             if (!file.exists()) {
                 while (true) {
                     if (file.exists()) {
