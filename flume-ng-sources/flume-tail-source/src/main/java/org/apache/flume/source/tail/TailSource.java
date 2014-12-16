@@ -37,42 +37,24 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
     private String fileName;
     private Integer batchSizeUpperLimit;
     private Long batchTimeUpperLimit;
-    private File file;
-    private FileReader fileReader;
-    private BufferedReader bufferedReader;
-    private String currentLine;
     private List<Event> eventList = new ArrayList<Event>();
+    private TailProcess tailProcess;
+    private String currentLine;
 
-    private static final Logger log = LoggerFactory.getLogger(TailSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TailSource.class);
     @Override
     public Status process() throws EventDeliveryException {
         Event event;
         Long batchStartTime = System.currentTimeMillis();
         Long batchEndTime = batchStartTime + batchTimeUpperLimit;
         while (eventList.size() < batchSizeUpperLimit && System.currentTimeMillis() < batchEndTime) {
-            // file rotated or file removed
-            if (!file.exists()) {
-                while (true) {
-                    if (file.exists()) {
-                        try {
-                            fileReader = new FileReader(file);
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                        bufferedReader = new BufferedReader(fileReader);
-                        break;
-                    }
-                }
-            }
             try {
-                currentLine = bufferedReader.readLine();
+                currentLine = tailProcess.tailOneLine();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (currentLine != null) {
-                event = EventBuilder.withBody(currentLine.getBytes());
-                eventList.add(event);
-            }
+            event = EventBuilder.withBody(currentLine.getBytes());
+            eventList.add(event);
         }
         if (eventList.size() > 0) {
             getChannelProcessor().processEventBatch(eventList);
@@ -92,12 +74,10 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
     @Override
     public synchronized void start() {
         try {
-            fileReader = new FileReader(fileName);
-        } catch (FileNotFoundException e) {
+            tailProcess = new TailProcess(fileName);
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        bufferedReader = new BufferedReader(fileReader);
-        file = new File(fileName);
         super.start();
     }
 }

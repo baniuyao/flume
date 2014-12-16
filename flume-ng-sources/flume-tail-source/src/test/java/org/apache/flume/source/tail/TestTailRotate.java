@@ -24,7 +24,7 @@ import java.io.IOException;
 /**
  * Created by ybaniu on 12/1/14.
  */
-public class TestTail {
+public class TestTailRotate {
     public static void main(String[] args) throws IOException, InterruptedException {
         File f = new File("/tmp/test.log");
         FileReader fr = new FileReader(f);

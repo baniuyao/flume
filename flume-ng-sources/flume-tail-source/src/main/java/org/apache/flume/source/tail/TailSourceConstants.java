@@ -26,6 +26,7 @@ public class TailSourceConstants {
     public static final String BATCH_TIME_LIMIT                 = "batchTimeLimit";
 
 
+
     public static final Integer DEFAULT_BATCH_SIZE_LIMIT        = 1;
 //    public static final Long DEFAULT_BATCH_TIME_LIMIT           = 300L;
 }
