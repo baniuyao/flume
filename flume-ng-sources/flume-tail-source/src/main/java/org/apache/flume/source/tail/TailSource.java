@@ -51,10 +51,19 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
             try {
                 currentLine = tailProcess.tailOneLine();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("tailOneLine IOException: {}",e.getMessage());
+                return Status.BACKOFF;
             }
-            event = EventBuilder.withBody(currentLine.getBytes());
-            eventList.add(event);
+            if (currentLine != null) {
+                event = EventBuilder.withBody(currentLine.getBytes());
+                eventList.add(event);
+                try {
+                    tailProcess.commit();
+                } catch (IOException e) {
+                    LOG.error("cannot commit tail: {}", e.getMessage());
+                    return Status.BACKOFF;
+                }
+            }
         }
         if (eventList.size() > 0) {
             getChannelProcessor().processEventBatch(eventList);
@@ -68,7 +77,7 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
     public void configure(Context context) {
         fileName = context.getString(TailSourceConstants.FILE_NAME);
         batchSizeUpperLimit = context.getInteger(TailSourceConstants.BATCH_SIZE_LIMIT, TailSourceConstants.DEFAULT_BATCH_SIZE_LIMIT);
-        batchTimeUpperLimit = context.getLong(TailSourceConstants.BATCH_TIME_LIMIT);
+        batchTimeUpperLimit = context.getLong(TailSourceConstants.BATCH_TIME_LIMIT, TailSourceConstants.DEFAULT_BATCH_TIME_LIMIT);
     }
 
     @Override
