@@ -22,8 +22,7 @@
 #JAVA_HOME=/usr/lib/jvm/java-6-sun
 
 # Give Flume more memory and pre-allocate, enable remote monitoring via JMX
-#JAVA_OPTS="-Xms100m -Xmx200m -Dcom.sun.management.jmxremote"
+JAVA_OPTS="-Xms2048m -Xmx2048m -Dcom.sun.management.jmxremote -Dflume.monitoring.type=HTTP -Dflume.monitoring.port=22222"
 
 # Note that the Flume conf directory is always included in the classpath.
 #FLUME_CLASSPATH=""
-
