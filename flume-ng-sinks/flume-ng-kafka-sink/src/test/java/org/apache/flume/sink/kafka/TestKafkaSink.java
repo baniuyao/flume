@@ -50,7 +50,6 @@ public class TestKafkaSink {
   public static void setup() {
     testUtil.prepare();
     List<String> topics = new ArrayList<String>(3);
-    topics.add(KafkaSinkConstants.DEFAULT_TOPIC);
     topics.add(TestConstants.STATIC_TOPIC);
     topics.add(TestConstants.CUSTOM_TOPIC);
     testUtil.initTopicList(topics);
@@ -88,17 +87,13 @@ public class TestKafkaSink {
       // ignore
     }
 
-    String fetchedMsg = new String((byte[])
-      testUtil.getNextMessageFromConsumer(KafkaSinkConstants.DEFAULT_TOPIC)
-        .message());
-    assertEquals(msg, fetchedMsg);
   }
 
   @Test
   public void testStaticTopic() {
     Context context = prepareDefaultContext();
     // add the static topic
-    context.put(KafkaSinkConstants.TOPIC, TestConstants.STATIC_TOPIC);
+    context.put(KafkaSinkConstants.FLUME_TOPIC, TestConstants.STATIC_TOPIC);
     String msg = "static-topic-test";
 
     try {
@@ -171,8 +166,6 @@ public class TestKafkaSink {
     if (status == Sink.Status.BACKOFF) {
       fail("Error Occurred");
     }
-    assertNull(
-      testUtil.getNextMessageFromConsumer(KafkaSinkConstants.DEFAULT_TOPIC));
   }
 
   private Context prepareDefaultContext() {

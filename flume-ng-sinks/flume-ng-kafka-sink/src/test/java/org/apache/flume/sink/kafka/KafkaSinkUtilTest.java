@@ -37,14 +37,6 @@ public class KafkaSinkUtilTest extends TestCase {
     context.put("brokerList","real-broker-list");
     Properties kafkaProps = KafkaSinkUtil.getKafkaProperties(context);
 
-    //check that we have defaults set
-    assertEquals(
-            kafkaProps.getProperty(KafkaSinkConstants.KEY_SERIALIZER_KEY),
-            KafkaSinkConstants.DEFAULT_KEY_SERIALIZER);
-    //check that kafka properties override the default and get correct name
-    assertEquals(
-            kafkaProps.getProperty(KafkaSinkConstants.MESSAGE_SERIALIZER_KEY),
-            "override.default.serializer");
     //check that any kafka property gets in
     assertEquals(kafkaProps.getProperty("fake.property"),
             "kafka.property.value");

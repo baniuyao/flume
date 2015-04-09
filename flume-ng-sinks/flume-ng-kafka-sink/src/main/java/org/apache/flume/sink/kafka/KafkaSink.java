@@ -19,10 +19,12 @@
 package org.apache.flume.sink.kafka;
 
 import com.google.common.base.Throwables;
-import kafka.producer.KeyedMessage;
 import org.apache.flume.*;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.sink.AbstractSink;
+import org.apache.flume.sink.kafka.message.AbstractMessageFactory;
+import org.apache.flume.sink.kafka.message.KafkaJavaMessageFactory;
+import org.apache.flume.sink.kafka.message.KafkaScalaMessageFactory;
 import org.apache.flume.sink.kafka.producer.AbstractKafkaProducer;
 import org.apache.flume.sink.kafka.producer.KafkaJavaProducer;
 import org.apache.flume.sink.kafka.producer.KafkaScalaProducer;
@@ -67,11 +69,12 @@ public class KafkaSink extends AbstractSink implements Configurable {
   private static final Logger logger = LoggerFactory.getLogger(KafkaSink.class);
   public static final String KEY_HDR = "key";
   public static final String TOPIC_HDR = "topic";
-  private Properties kafkaProps;
+  private Properties kafkaProperties;
   private String producerType;
   private AbstractKafkaProducer producer;
+  private AbstractMessageFactory messageFactory;
   private String topic;
-  private int batchSize;
+  private int flumeSendBatchSize;
 
   @Override
   public Status process() throws EventDeliveryException {
@@ -88,7 +91,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
       transaction = channel.getTransaction();
       transaction.begin();
 
-      for (; processedEvents < batchSize; processedEvents += 1) {
+      for (; processedEvents < flumeSendBatchSize; processedEvents += 1) {
         event = channel.take();
 
         if (event == null) {
@@ -112,9 +115,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
         }
 
         // create a message and add to buffer
-        KeyedMessage<String, byte[]> data = new KeyedMessage<String, byte[]>
-          (eventTopic, eventKey, eventBody);
-        producer.addMessage(data);
+        producer.addMessage(messageFactory.createMessage(eventTopic, eventKey, eventBody));
 
       }
 
@@ -151,9 +152,11 @@ public class KafkaSink extends AbstractSink implements Configurable {
   public synchronized void start() {
     // instantiate the producer
     if (producerType.equals("scala")) {
-      producer = new KafkaScalaProducer(kafkaProps, batchSize);
+      producer = new KafkaScalaProducer(kafkaProperties, flumeSendBatchSize);
+      messageFactory = new KafkaScalaMessageFactory();
     } else if (producerType.equals("java")) {
-      producer = new KafkaJavaProducer(kafkaProps, batchSize);
+      producer = new KafkaJavaProducer(kafkaProperties, flumeSendBatchSize);
+      messageFactory = new KafkaJavaMessageFactory();
     }
     super.start();
   }
@@ -180,27 +183,14 @@ public class KafkaSink extends AbstractSink implements Configurable {
    */
   @Override
   public void configure(Context context) {
-
-    batchSize = context.getInteger(KafkaSinkConstants.BATCH_SIZE,
-      KafkaSinkConstants.DEFAULT_BATCH_SIZE);
-    producerType = context.getString(KafkaSinkConstants.PRODUCER_TYPE);
-    logger.debug("Using batch size: {}", batchSize);
-
-    topic = context.getString(KafkaSinkConstants.TOPIC,
-      KafkaSinkConstants.DEFAULT_TOPIC);
-    if (topic.equals(KafkaSinkConstants.DEFAULT_TOPIC)) {
-      logger.warn("The Property 'topic' is not set. " +
-        "Using the default topic name: " +
-        KafkaSinkConstants.DEFAULT_TOPIC);
-    } else {
-      logger.info("Using the static topic: " + topic +
-        " this may be over-ridden by event headers");
-    }
-
-    kafkaProps = KafkaSinkUtil.getKafkaProperties(context);
-
-    if (logger.isDebugEnabled()) {
-      logger.debug("Kafka producer properties: " + kafkaProps);
+    flumeSendBatchSize = context.getInteger(KafkaSinkConstants.FLUME_SEND_BATCH_SIZE,
+      KafkaSinkConstants.DEFAULT_FLUME_SEND_BATCH_SIZE);
+    producerType = context.getString(KafkaSinkConstants.FLUME_PRODUCER_TYPE);
+    topic = context.getString(KafkaSinkConstants.FLUME_TOPIC);
+    kafkaProperties = KafkaSinkUtil.getKafkaProperties(context);
+    if (producerType.equals("java")) {
+      kafkaProperties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+      kafkaProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
     }
   }
 }
