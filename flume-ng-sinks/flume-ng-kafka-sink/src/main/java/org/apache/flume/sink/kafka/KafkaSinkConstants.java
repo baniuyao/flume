@@ -26,6 +26,7 @@ public class KafkaSinkConstants {
 
   /* Properties */
 
+  public static final String PRODUCER_TYPE = "producer.type";
   public static final String TOPIC = "topic";
   public static final String BATCH_SIZE = "batchSize";
   public static final String MESSAGE_SERIALIZER_KEY = "serializer.class";

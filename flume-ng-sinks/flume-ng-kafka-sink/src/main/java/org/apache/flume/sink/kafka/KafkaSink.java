@@ -19,19 +19,18 @@
 package org.apache.flume.sink.kafka;
 
 import com.google.common.base.Throwables;
-import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
 import org.apache.flume.*;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.sink.AbstractSink;
+import org.apache.flume.sink.kafka.producer.AbstractKafkaProducer;
+import org.apache.flume.sink.kafka.producer.KafkaJavaProducer;
+import org.apache.flume.sink.kafka.producer.KafkaScalaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
-import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 /**
  * A Flume Sink that can publish messages to Kafka.
@@ -69,10 +68,10 @@ public class KafkaSink extends AbstractSink implements Configurable {
   public static final String KEY_HDR = "key";
   public static final String TOPIC_HDR = "topic";
   private Properties kafkaProps;
-  private Producer<String, byte[]> producer;
+  private String producerType;
+  private AbstractKafkaProducer producer;
   private String topic;
   private int batchSize;
-  private List<KeyedMessage<String, byte[]>> messageList;
 
   @Override
   public Status process() throws EventDeliveryException {
@@ -89,7 +88,6 @@ public class KafkaSink extends AbstractSink implements Configurable {
       transaction = channel.getTransaction();
       transaction.begin();
 
-      messageList.clear();
       for (; processedEvents < batchSize; processedEvents += 1) {
         event = channel.take();
 
@@ -116,13 +114,13 @@ public class KafkaSink extends AbstractSink implements Configurable {
         // create a message and add to buffer
         KeyedMessage<String, byte[]> data = new KeyedMessage<String, byte[]>
           (eventTopic, eventKey, eventBody);
-        messageList.add(data);
+        producer.addMessage(data);
 
       }
 
       // publish batch and commit.
       if (processedEvents > 0) {
-        producer.send(messageList);
+        producer.send();
       }
 
       transaction.commit();
@@ -152,8 +150,11 @@ public class KafkaSink extends AbstractSink implements Configurable {
   @Override
   public synchronized void start() {
     // instantiate the producer
-    ProducerConfig config = new ProducerConfig(kafkaProps);
-    producer = new Producer<String, byte[]>(config);
+    if (producerType.equals("scala")) {
+      producer = new KafkaScalaProducer(kafkaProps, batchSize);
+    } else if (producerType.equals("java")) {
+      producer = new KafkaJavaProducer(kafkaProps, batchSize);
+    }
     super.start();
   }
 
@@ -182,8 +183,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
 
     batchSize = context.getInteger(KafkaSinkConstants.BATCH_SIZE,
       KafkaSinkConstants.DEFAULT_BATCH_SIZE);
-    messageList =
-      new ArrayList<KeyedMessage<String, byte[]>>(batchSize);
+    producerType = context.getString(KafkaSinkConstants.PRODUCER_TYPE);
     logger.debug("Using batch size: {}", batchSize);
 
     topic = context.getString(KafkaSinkConstants.TOPIC,
