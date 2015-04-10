@@ -17,6 +17,7 @@
 package org.apache.flume.sink.kafka;
 
 import org.apache.flume.Context;
+import org.apache.flume.conf.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,12 +30,20 @@ public class KafkaSinkUtil {
           LoggerFactory.getLogger(KafkaSinkUtil.class);
 
   public static Properties getKafkaProperties(Context context) {
+    String producerType = context.getString(KafkaSinkConstants.FLUME_PRODUCER_TYPE);
     Properties kafkaProperties = new Properties();
-    Map<String,String> kafkaPropertiesMap =
-            context.getSubProperties(KafkaSinkConstants.KAFKA_PROPERTY_PREFIX);
-
-    for (Map.Entry<String,String> prop : kafkaPropertiesMap.entrySet()) {
-      kafkaProperties.put(prop.getKey(), prop.getValue());
+    if (producerType == null) {
+      throw new ConfigurationException("producer.type is null!");
+    } else {
+      Map<String, String> kafkaPropertiesMap =
+              context.getSubProperties(KafkaSinkConstants.KAFKA_PROPERTY_PREFIX);
+      for (Map.Entry<String, String> prop : kafkaPropertiesMap.entrySet()) {
+        kafkaProperties.put(prop.getKey(), prop.getValue());
+      }
+      if (producerType.equals("java")) {
+        kafkaProperties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        kafkaProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+      }
     }
     return kafkaProperties;
   }

@@ -188,9 +188,5 @@ public class KafkaSink extends AbstractSink implements Configurable {
     producerType = context.getString(KafkaSinkConstants.FLUME_PRODUCER_TYPE);
     topic = context.getString(KafkaSinkConstants.FLUME_TOPIC);
     kafkaProperties = KafkaSinkUtil.getKafkaProperties(context);
-    if (producerType.equals("java")) {
-      kafkaProperties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-      kafkaProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-    }
   }
 }
