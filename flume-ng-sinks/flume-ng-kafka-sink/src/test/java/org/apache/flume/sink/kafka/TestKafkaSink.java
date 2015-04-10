@@ -22,38 +22,42 @@ import kafka.producer.KeyedMessage;
 import org.apache.flume.*;
 import org.apache.flume.Sink.Status;
 import org.apache.flume.sink.AbstractSink;
+import org.apache.flume.sink.kafka.message.AbstractMessageFactory;
+import org.apache.flume.sink.kafka.message.KafkaJavaMessageFactory;
 import org.apache.flume.sink.kafka.message.KafkaScalaMessageFactory;
+import org.apache.flume.sink.kafka.producer.AbstractKafkaProducer;
+import org.apache.flume.sink.kafka.producer.KafkaJavaProducer;
 import org.apache.flume.sink.kafka.producer.KafkaScalaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 
+import static org.apache.flume.sink.kafka.ProducerType.*;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
 /**
  * Created by yaorenjie on 4/10/15.
  */
-public class TestKafkaScalaProducerSink {
+public class TestKafkaSink {
   private KafkaSink mockKafkaSink;
-  private KafkaScalaProducer mockKafkaScalaProducer;
-  private KafkaScalaMessageFactory mockKafkaScalaMessageFactory;
+  private AbstractKafkaProducer mockKafkaProducer;
+  private AbstractMessageFactory mockMessageFactory;
   private Channel mockChannel;
   private Event mockEvent;
   private Transaction mockTx;
-
+  private Field field;
   @Before
   public void setUp() throws NoSuchFieldException, IllegalAccessException {
-    mockKafkaScalaProducer = mock(KafkaScalaProducer.class);
-    mockKafkaScalaMessageFactory = mock(KafkaScalaMessageFactory.class);
     mockKafkaSink = new KafkaSink();
     mockChannel = mock(Channel.class);
     mockEvent = mock(Event.class);
     mockTx = mock(Transaction.class);
 
 
-    Field field = AbstractSink.class.getDeclaredField("channel");
+    field = AbstractSink.class.getDeclaredField("channel");
     field.setAccessible(true);
     field.set(mockKafkaSink, mockChannel);
 
@@ -61,35 +65,53 @@ public class TestKafkaScalaProducerSink {
     field.setAccessible(true);
     field.set(mockKafkaSink, "test-topic");
 
-    field = KafkaSink.class.getDeclaredField("producer");
-    field.setAccessible(true);
-    field.set(mockKafkaSink, mockKafkaScalaProducer);
-
-
-    field = KafkaSink.class.getDeclaredField("messageFactory");
-    field.setAccessible(true);
-    field.set(mockKafkaSink, mockKafkaScalaMessageFactory);
-
-    field = KafkaSink.class.getDeclaredField("flumeSendBatchSize");
-    field.setAccessible(true);
-    field.set(mockKafkaSink, 1);
-
     when(mockChannel.take()).thenReturn(mockEvent);
     when(mockChannel.getTransaction()).thenReturn(mockTx);
   }
 
-  @Test
-  public void testProcessStatusReady() throws EventDeliveryException {
+  private void testProcessStatusReady(ProducerType producerType) throws EventDeliveryException, NoSuchFieldException, IllegalAccessException {
+    switch (producerType) {
+      case SCALA:
+        mockKafkaProducer = mock(KafkaScalaProducer.class);
+        mockMessageFactory = mock(KafkaScalaMessageFactory.class);
+        break;
+      case JAVA:
+        mockKafkaProducer = mock(KafkaJavaProducer.class);
+        mockMessageFactory = mock(KafkaJavaMessageFactory.class);
+        break;
+    }
+
+    field = KafkaSink.class.getDeclaredField("producer");
+    field.setAccessible(true);
+    field.set(mockKafkaSink, mockKafkaProducer);
+
+    field = KafkaSink.class.getDeclaredField("messageFactory");
+    field.setAccessible(true);
+    field.set(mockKafkaSink, mockMessageFactory);
+
+    field = KafkaSink.class.getDeclaredField("flumeSendBatchSize");
+    field.setAccessible(true);
+    field.set(mockKafkaSink, 10);
+
     when(mockEvent.getBody()).thenReturn("frank".getBytes());
     Status status = mockKafkaSink.process();
     verify(mockChannel, times(1)).getTransaction();
-    verify(mockChannel, times(1)).take();
-    verify(mockKafkaScalaMessageFactory, times(1)).createMessage("test-topic", null, "frank".getBytes());
-    KeyedMessage<String, byte[]> message = mockKafkaScalaMessageFactory.createMessage("test-topic", null, "frank".getBytes());
-    verify(mockKafkaScalaProducer, times(1)).addMessage(message);
-    verify(mockKafkaScalaProducer, times(1)).send();
+    verify(mockChannel, times(10)).take();
+    verify(mockMessageFactory, times(10)).createMessage("test-topic", null, "frank".getBytes());
+    verify(mockKafkaProducer, times(10)).addMessage(mockMessageFactory.createMessage("test-topic", null, "frank".getBytes()));
+    verify(mockKafkaProducer, times(1)).send();
     verify(mockTx, times(1)).commit();
     verify(mockTx, times(1)).close();
     assertEquals(Status.READY, status);
+  }
+
+  @Test
+  public void testProcessStatusReadyWithJavaProducer() throws EventDeliveryException, NoSuchFieldException, IllegalAccessException {
+    testProcessStatusReady(JAVA);
+  }
+
+  @Test
+  public void testProcessStatusReadyWithScalaProducer() throws EventDeliveryException, NoSuchFieldException, IllegalAccessException {
+    testProcessStatusReady(SCALA);
   }
 }
