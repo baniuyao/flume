@@ -29,6 +29,13 @@ public class KafkaSinkUtil {
   private static final Logger log =
           LoggerFactory.getLogger(KafkaSinkUtil.class);
 
+  /**
+   * Parse the parameters in the configuration files. Add default value for
+   * key.serializer and value.serializer while using Java API.
+   *
+   * @param context
+   * @return Kafka properties
+   */
   public static Properties getKafkaProperties(Context context) {
     String producerType = context.getString(KafkaSinkConstants.FLUME_PRODUCER_TYPE);
     Properties kafkaProperties = new Properties();

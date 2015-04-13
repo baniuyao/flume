@@ -43,22 +43,20 @@ import java.util.Map;
  * For use of partitioning, use an interceptor to generate a header with the
  * partition key
  * <p/>
- * Mandatory properties are:
- * brokerList -- can be a partial list, but at least 2 are recommended for HA
- * <p/>
- * <p/>
- * however, any property starting with "kafka." will be passed along to the
- * Kafka producer
+ * Any property starting with "kafka." will be passed along to the
+ * Kafka producer. And other properties will be considered as parameters
+ * pass to the flume.
  * Read the Kafka producer documentation to see which configurations can be used
  * <p/>
  * Optional properties
- * topic - there's a default, and also - this can be in the event header if
- * you need to support events with
- * different topics
- * batchSize - how many messages to process in one batch. Larger batches
+ * topic - there's NO default value, and also - this can be in the event header if
+ * you need to support events with different topics
+ * batch.size - how many messages to process in one batch. Larger batches
  * improve throughput while adding latency.
- * requiredAcks -- 0 (unsafe), 1 (accepted by at least one broker, default),
- * -1 (accepted by all brokers)
+ * producer.type - can be "scala" or "java". Because Kafka use new API since 0.8.2,
+ * the kafka sink will both support the new API and the old API. "scala" refers to
+ * the old Scala API and "java" refers to the new Java API. They both get work in
+ * 0.8.1 and 0.8.2.
  * <p/>
  * header properties (per event):
  * topic
@@ -168,15 +166,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
 
 
   /**
-   * We configure the sink and generate properties for the Kafka Producer
    *
-   * Kafka producer properties is generated as follows:
-   * 1. We generate a properties object with some static defaults that
-   * can be overridden by Sink configuration
-   * 2. We add the configuration users added for Kafka (parameters starting
+   * We add the configuration users added for Kafka (parameters starting
    * with .kafka. and must be valid Kafka Producer properties
-   * 3. We add the sink's documented parameters which can override other
-   * properties
    *
    * @param context
    */
