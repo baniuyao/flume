@@ -18,7 +18,6 @@
 
 package org.apache.flume.sink.kafka;
 
-import kafka.producer.KeyedMessage;
 import org.apache.flume.*;
 import org.apache.flume.Sink.Status;
 import org.apache.flume.sink.AbstractSink;
@@ -28,7 +27,6 @@ import org.apache.flume.sink.kafka.message.KafkaScalaMessageFactory;
 import org.apache.flume.sink.kafka.producer.AbstractKafkaProducer;
 import org.apache.flume.sink.kafka.producer.KafkaJavaProducer;
 import org.apache.flume.sink.kafka.producer.KafkaScalaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,6 +47,7 @@ public class TestKafkaSink {
   private Event mockEvent;
   private Transaction mockTx;
   private Field field;
+
   @Before
   public void setUp() throws NoSuchFieldException, IllegalAccessException {
     mockKafkaSink = new KafkaSink();
@@ -96,10 +95,10 @@ public class TestKafkaSink {
     when(mockEvent.getBody()).thenThrow(new RuntimeException());
     Status status = mockKafkaSink.process();
     verify(mockChannel, times(1)).getTransaction();
-    verify(mockChannel, times(10)).take();
-    verify(mockMessageFactory, times(10)).createMessage("test-topic", null, "frank".getBytes());
-    verify(mockKafkaProducer, times(10)).addMessage(mockMessageFactory.createMessage("test-topic", null, "frank".getBytes()));
-    verify(mockKafkaProducer, times(1)).send();
+    verify(mockChannel, times(1)).take();
+    verify(mockMessageFactory, times(0)).createMessage("test-topic", null, "frank".getBytes());
+    verify(mockKafkaProducer, times(0)).addMessage(mockMessageFactory.createMessage("test-topic", null, "frank".getBytes()));
+    verify(mockKafkaProducer, times(0)).send();
     verify(mockTx, times(0)).commit();
     verify(mockTx, times(1)).close();
     verify(mockTx, times(1)).rollback();
@@ -152,13 +151,15 @@ public class TestKafkaSink {
     testProcessStatusReady(SCALA);
   }
 
+//  @Test(expected=EventDeliveryException.class)
   @Test
   public void testProcessStatusBackOffWithJavaProducer() throws EventDeliveryException, NoSuchFieldException, IllegalAccessException {
-    testProcessStatusReady(JAVA);
+    testProcessStatusBackOff(JAVA);
   }
 
+//  @Test(expected=EventDeliveryException.class)
   @Test
   public void testProcessStatusBackOffWithScalaProducer() throws EventDeliveryException, NoSuchFieldException, IllegalAccessException {
-    testProcessStatusReady(SCALA);
+    testProcessStatusBackOff(SCALA);
   }
 }

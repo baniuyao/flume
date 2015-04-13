@@ -138,7 +138,6 @@ public class KafkaSink extends AbstractSink implements Configurable {
           throw Throwables.propagate(e);
         }
       }
-      throw new EventDeliveryException(errorMsg, ex);
     } finally {
       if (transaction != null) {
         transaction.close();
