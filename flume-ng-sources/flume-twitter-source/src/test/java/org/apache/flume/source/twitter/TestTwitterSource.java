@@ -77,6 +77,7 @@ public class TestTwitterSource extends Assert {
     TwitterSource source = new TwitterSource();
     source.configure(context);
 
+
     Map<String, String> channelContext = new HashMap();
     channelContext.put("capacity", "1000000");
     channelContext.put("keep-alive", "0"); // for faster tests

@@ -25,25 +25,25 @@ import java.io.IOException;
  * Created by ybaniu on 12/1/14.
  */
 public class TestTailRotate {
-    public static void main(String[] args) throws IOException, InterruptedException {
-        File f = new File("/tmp/test.log");
-        FileReader fr = new FileReader(f);
-        BufferedReader br = new BufferedReader(fr);
-        String currentLine = null;
+  public static void main(String[] args) throws IOException, InterruptedException {
+    File f = new File("/tmp/test.log");
+    FileReader fr = new FileReader(f);
+    BufferedReader br = new BufferedReader(fr);
+    String currentLine = null;
+    while (true) {
+      if (!f.exists()) {
         while (true) {
-            if (!f.exists()) {
-                while (true) {
-                    if (f.exists()) {
-                        fr = new FileReader(f);
-                        br = new BufferedReader(fr);
-                        break;
-                    }
-                }
-            }
-            if ((currentLine = br.readLine()) != null) {
-                System.out.println(currentLine);
-            }
-//            Thread.sleep(3000L);
+          if (f.exists()) {
+            fr = new FileReader(f);
+            br = new BufferedReader(fr);
+            break;
+          }
         }
+      }
+      if ((currentLine = br.readLine()) != null) {
+        System.out.println(currentLine);
+      }
+//            Thread.sleep(3000L);
     }
+  }
 }

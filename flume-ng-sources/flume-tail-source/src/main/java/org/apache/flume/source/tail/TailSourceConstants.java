@@ -20,14 +20,13 @@ package org.apache.flume.source.tail;
  * Created by ybaniu on 12/1/14.
  */
 public class TailSourceConstants {
-    public static final String PROPERTY_PREFIX                  = "tail";
-    public static final String FILE_NAME                        = "fileName";
-    public static final String BATCH_SIZE_LIMIT                 = "batchSizeLimit";
-    public static final String BATCH_TIME_LIMIT                 = "batchTimeLimit";
+  public static final String PROPERTY_PREFIX = "tail";
+  public static final String FILE_NAME = "file.name";
+  public static final String BATCH_SIZE = "batch.size";
+  public static final String BATCH_TIME = "batch.time";
 
 
-
-    public static final Integer DEFAULT_BATCH_SIZE_LIMIT        = 1;
-    public static final Long DEFAULT_BATCH_TIME_LIMIT        = 1L;
+  public static final Integer DEFAULT_BATCH_SIZE = 1;
+  public static final Long DEFAULT_BATCH_TIME = 1L;
 //    public static final Long DEFAULT_BATCH_TIME_LIMIT           = 300L;
 }

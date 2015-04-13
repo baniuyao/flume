@@ -22,59 +22,61 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 
 /**
- * Created by ybaniu on 12/16/14.
+ * {@link org.apache.flume.source.tail.TailOffsetKeeper} is used to keep offset
+ * information.
  */
 public class TailOffsetKeeper {
-    private static final Logger LOG = LoggerFactory.getLogger(TailOffsetKeeper.class);
-    private Long currentOffset = 0L;
-    private String offsetFileName;
-    public TailOffsetKeeper(String fileName) throws IOException {
-        this.offsetFileName = fileName;
-        this.currentOffset = getLatestOffset();
+  private static final Logger LOG = LoggerFactory.getLogger(TailOffsetKeeper.class);
+  private Long currentOffset = 0L;
+  private String offsetFileName;
+
+  public TailOffsetKeeper(String fileName) throws IOException {
+    this.offsetFileName = fileName;
+    this.currentOffset = getLatestOffset();
+  }
+
+  public void updateOffset(Integer offset) throws IOException {
+    Writer writer = new BufferedWriter(
+            new OutputStreamWriter(
+                    new FileOutputStream(offsetFileName)));
+    // "+ 1" here is because of the "\n"
+    currentOffset = currentOffset + offset + 1;
+    writer.write(System.currentTimeMillis() + "|" + currentOffset + "\n");
+    writer.close();
+  }
+
+  public void rotate() {
+    try {
+      Writer writer = new BufferedWriter(
+              new OutputStreamWriter(
+                      new FileOutputStream(offsetFileName, true)));
+      writer.close();
+      this.currentOffset = 0L;
+      LOG.debug("offsetKeeper: {} rotate", offsetFileName);
+    } catch (FileNotFoundException e) {
+      LOG.error("offset file not found: " + offsetFileName);
+    } catch (IOException e) {
+      LOG.error("IO Exception, offset file: " + offsetFileName);
     }
 
-    public void updateOffset(Integer offset) throws IOException {
-        Writer writer = new BufferedWriter(
-                new OutputStreamWriter(
-                        new FileOutputStream(offsetFileName)));
-        // "+ 1" here is because of the "\n"
-        currentOffset = currentOffset + offset + 1;
-        writer.write(System.currentTimeMillis() + "|" + currentOffset +"\n");
-        writer.close();
-    }
+  }
 
-    public void rotate() {
-        try {
-            Writer writer = new BufferedWriter(
-                    new OutputStreamWriter(
-                            new FileOutputStream(offsetFileName, true)));
-            writer.close();
-            this.currentOffset = 0L;
-            LOG.debug("offsetKeeper: {} rotate", offsetFileName);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+  public Long getLatestOffset() throws IOException {
+    BufferedReader bufferedReader = null;
+    try {
+      bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(offsetFileName)));
+    } catch (FileNotFoundException e) {
+      return 0L;
     }
-
-    public Long getLatestOffset() throws IOException {
-        BufferedReader bufferedReader = null;
-        try {
-            bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(offsetFileName)));
-        } catch (FileNotFoundException e) {
-            return 0L;
-        }
-        String currentLine = null;
-        String tmp = null;
-        while ((tmp = bufferedReader.readLine()) != null) {
-            currentLine = tmp;
-        }
-        if (currentLine != null) {
-            return Long.valueOf(currentLine.split("\\|")[1]);
-        } else {
-            return 0L;
-        }
+    String currentLine = null;
+    String tmp = null;
+    while ((tmp = bufferedReader.readLine()) != null) {
+      currentLine = tmp;
     }
+    if (currentLine != null) {
+      return Long.valueOf(currentLine.split("\\|")[1]);
+    } else {
+      return 0L;
+    }
+  }
 }
