@@ -31,6 +31,7 @@ import java.io.IOException;
  */
 public class TestTailProcess {
   private static final Logger LOG = LoggerFactory.getLogger(TestTailProcess.class);
+
   @Test
   public void testRestartTailProcess() throws IOException, InterruptedException {
     String result = "";

@@ -27,13 +27,14 @@ import org.apache.flume.sink.DefaultSinkProcessor;
 import org.apache.flume.sink.RollingFileSink;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for {@link org.apache.flume.source.tail.TailSource}

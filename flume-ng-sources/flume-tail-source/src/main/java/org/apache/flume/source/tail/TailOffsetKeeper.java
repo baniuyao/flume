@@ -39,6 +39,7 @@ public class TailOffsetKeeper {
     this.currentOffset = getLatestOffset();
     this.maxSizeMB = maxSizeMB;
   }
+
   public void updateOffset(Integer offset) throws IOException {
     // TODO: offset file rotate
     Long ts = System.currentTimeMillis();
