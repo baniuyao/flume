@@ -23,27 +23,18 @@ import org.apache.flume.*;
 import org.apache.flume.channel.ChannelProcessor;
 import org.apache.flume.channel.MemoryChannel;
 import org.apache.flume.channel.ReplicatingChannelSelector;
-import org.apache.flume.lifecycle.LifecycleState;
 import org.apache.flume.sink.DefaultSinkProcessor;
-import org.apache.flume.sink.LoggerSink;
 import org.apache.flume.sink.RollingFileSink;
-import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Created by yaorenjie on 4/13/15.
  */
 public class TestTailSource {
-
   private TailSource tailSource;
   private Context tailContext;
   private MemoryChannel memoryChannel;
@@ -55,12 +46,22 @@ public class TestTailSource {
   private SinkRunner sinkRunner;
   private ChannelSelector channelSelector;
   private ChannelProcessor channelProcessor;
+  private File logFile = new File("/tmp/test.log");
+  private File flumeDirectory = new File("/tmp/flume");
+  private File toCompareFile = new File("/tmp/test_all.log");
+  private File rotatedFile = new File("/tmp/test.log.2");
 
   @Before
   public void setUp() throws InterruptedException, EventDeliveryException, IOException {
-    cleanAll();
+    FileUtils.forceDeleteOnExit(logFile);
+    FileUtils.forceDeleteOnExit(flumeDirectory);
+    FileUtils.forceDeleteOnExit(toCompareFile);
+    FileUtils.forceDeleteOnExit(rotatedFile);
+    FileUtils.touch(toCompareFile);
+    FileUtils.forceMkdir(flumeDirectory);
+    FileUtils.touch(logFile);
     tailContext = new Context();
-    tailContext.put("file.name", "/tmp/test.log");
+    tailContext.put("file.name", logFile.getAbsolutePath());
     tailSource = new TailSource();
     tailSource.setName("tail_test");
     tailSource.configure(tailContext);
@@ -73,7 +74,7 @@ public class TestTailSource {
 
     fileSink = new RollingFileSink();
     sinkContext = new Context();
-    sinkContext.put("sink.directory", "/tmp/flume");
+    sinkContext.put("sink.directory", flumeDirectory.getAbsolutePath());
     sinkContext.put("sink.rollInterval", "0");
     sinkContext.put("batchSize", "1");
     fileSink.configure(sinkContext);
@@ -89,55 +90,28 @@ public class TestTailSource {
     channelSelector.setChannels(Collections.<Channel>singletonList(memoryChannel));
     channelProcessor = new ChannelProcessor(channelSelector);
     tailSource.setChannelProcessor(channelProcessor);
-//    tailSource.start();
-//    tailSource.process();
-//
-//    Thread.sleep(5000L);
-//    tailSource.stop();
-//    sinkRunner.stop();
-//    fileSink.stop();
-  }
-
-  private void cleanAll() throws IOException {
-    File file = new File("/tmp/test.log");
-    File file2 = new File("/tmp/flume");
-    if (file2.exists()) {
-      file2.delete();
-    }
-    file2.mkdirs();
-    if (file.exists()) {
-      file.delete();
-    }
-    file.createNewFile();
-  }
-
-  private void stopAll() {
-    tailSource.stop();
-    sinkRunner.stop();
-    fileSink.stop();
   }
 
   private Boolean isTwoFileSame(File expectedFile, File resultFile) throws IOException {
     BufferedReader expectedBufferReader = new BufferedReader(new FileReader(expectedFile));
     BufferedReader resultBufferReader = new BufferedReader(new FileReader(resultFile));
-    String s1 = "";
-    String s2 = "";
-    String y = "", z = "";
-    while ((z = expectedBufferReader.readLine()) != null) s2 += z;
-    while ((y = resultBufferReader.readLine()) != null) s1 += y;
-    return s1.equals(s2);
+    String resultLinesString = "";
+    String expectedLinesString = "";
+    String resultLine, expectedLine;
+    while ((expectedLine = expectedBufferReader.readLine()) != null) expectedLinesString += expectedLine;
+    while ((resultLine = resultBufferReader.readLine()) != null) resultLinesString += resultLine;
+    System.out.println(expectedFile.getName() + ":" + expectedLinesString);
+    System.out.println(resultFile.getName() + ":" + resultLinesString);
+    return resultLinesString.equals(expectedLinesString);
   }
-  @Test
+
+//  @Test
   public void testBaseRead() throws IOException, InterruptedException, EventDeliveryException {
-    List<String> expectedLines = new ArrayList<String>();
-    List<String> resultLines = new ArrayList<String>();
-    boolean flag = true;
     tailSource.start();
-    Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("/tmp/test.log", true)));
+    Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile, true)));
     for (int i = 0; i < 10; i ++){
       String line = "hello, world - " + i;
       writer.write(line + "\n");
-      expectedLines.add(line);
     }
     writer.close();
     for (int i = 0; i< 10; i ++) {
@@ -147,8 +121,43 @@ public class TestTailSource {
     tailSource.stop();
     sinkRunner.stop();
     fileSink.stop();
-    File flumeDirectory = new File("/tmp/flume");
     File resultFile = flumeDirectory.listFiles()[0];
-    assert isTwoFileSame(new File("/tmp/test.log"), resultFile);
+    assert isTwoFileSame(logFile, resultFile);
+  }
+
+  @Test
+  public void testFileRotate() throws IOException, EventDeliveryException, InterruptedException {
+    tailSource.start();
+    Writer toRotateWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile, true)));
+    Writer allContentWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(toCompareFile, true)));
+    for (int i = 0; i < 10; i ++){
+      String line = "hello, world - " + i;
+      toRotateWriter.write(line + "\n");
+      allContentWriter.write(line + "\n");
+    }
+    for (int i = 0; i< 10; i ++) {
+      tailSource.process();
+    }
+    toRotateWriter.flush();
+    FileUtils.forceDeleteOnExit(rotatedFile);
+    FileUtils.moveFile(logFile, rotatedFile);
+    FileUtils.touch(logFile);
+    for (int i = 11; i < 20; i ++){
+      String line = "hello, world - " + i;
+      toRotateWriter.write(line + "\n");
+      allContentWriter.write(line + "\n");
+    }
+    toRotateWriter.close();
+    allContentWriter.close();
+    for (int i = 0; i< 10; i ++) {
+      tailSource.process();
+    }
+    Thread.sleep(1000L);
+    tailSource.stop();
+    sinkRunner.stop();
+    fileSink.stop();
+    File resultFile = flumeDirectory.listFiles()[0];
+//    assert isTwoFileSame(toCompareFile, resultFile);
+    System.out.println("a");
   }
 }
