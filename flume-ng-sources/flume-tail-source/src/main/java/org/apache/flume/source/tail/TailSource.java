@@ -16,7 +16,6 @@
  */
 package org.apache.flume.source.tail;
 
-import com.sun.javafx.tools.packager.bundlers.Bundler;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDeliveryException;
@@ -44,10 +43,10 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
   private String fileName;
   private Integer batchSize;
   private Long batchTime;
-  private String offsetSuffix;
   private List<Event> eventList = new ArrayList<Event>();
   private TailProcess tailProcess;
   private String currentLine;
+  private Integer maxOffsetFileSizeMB;
 
   @Override
   public Status process() throws EventDeliveryException {
@@ -62,6 +61,7 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
         return Status.BACKOFF;
       }
       if (currentLine != null) {
+        LOG.debug("tailOneLine: {}", currentLine);
         event = EventBuilder.withBody(currentLine.getBytes());
         eventList.add(event);
         try {
@@ -87,13 +87,14 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
       throw new ConfigurationException("must specify file.name");
     }
     batchSize = context.getInteger(TailSourceConstants.BATCH_SIZE, TailSourceConstants.DEFAULT_BATCH_SIZE);
-    batchTime = context.getLong(TailSourceConstants.BATCH_TIME, TailSourceConstants.DEFAULT_BATCH_TIME);
+    batchTime = context.getLong(TailSourceConstants.BATCH_TIME_SEC, TailSourceConstants.DEFAULT_BATCH_TIME_SEC);
+    maxOffsetFileSizeMB = context.getInteger(TailSourceConstants.MAX_OFFSET_FILE_SIZE_MB, TailSourceConstants.DEFAULT_MAX_OFFSET_FILE_SIZE_MB);
   }
 
   @Override
   public synchronized void start() {
     try {
-      tailProcess = new TailProcess(fileName, this.getName());
+      tailProcess = new TailProcess(fileName, this.getName(), maxOffsetFileSizeMB);
     } catch (IOException e) {
       LOG.error("IOException in tailProcess");
     }

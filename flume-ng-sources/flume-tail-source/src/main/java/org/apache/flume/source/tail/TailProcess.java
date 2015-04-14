@@ -16,6 +16,7 @@
  */
 package org.apache.flume.source.tail;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,24 +32,28 @@ public class TailProcess {
   private BufferedReader bufferedReader;
   private TailOffsetKeeper tailOffsetKeeper = null;
   private Integer currentLineLength;
+  private Long fileSize;
 
-  public TailProcess(String fileName, String offsetSuffix) throws IOException {
+  public TailProcess(String fileName, String offsetSuffix, Integer offsetFileMaxSizeMB) throws IOException {
     this.file = new File(fileName);
+    this.fileSize = FileUtils.sizeOf(file);
     this.fileReader = new FileReader(file);
     this.bufferedReader = new BufferedReader(fileReader);
-    tailOffsetKeeper = new TailOffsetKeeper(fileName + ".offset_" + offsetSuffix);
+    tailOffsetKeeper = new TailOffsetKeeper(fileName + ".offset_" + offsetSuffix, offsetFileMaxSizeMB);
     bufferedReader.skip(tailOffsetKeeper.getLatestOffset());
   }
 
   public void commit() throws IOException {
     tailOffsetKeeper.updateOffset(currentLineLength);
+    fileSize = FileUtils.sizeOf(file);
   }
 
   public String tailOneLine() throws IOException {
-    checkFileRotate();
     String currentLine = bufferedReader.readLine();
     if (currentLine != null) {
       currentLineLength = currentLine.length();
+    } else {
+      checkFileRotate();
     }
     return currentLine;
   }
@@ -79,6 +84,16 @@ public class TailProcess {
           bufferedReader = new BufferedReader(fileReader);
           break;
         }
+      }
+    } else {
+      if (FileUtils.sizeOf(file) < fileSize) {
+        try {
+          fileReader = new FileReader(file);
+        } catch (FileNotFoundException e) {
+          e.printStackTrace();
+        }
+        tailOffsetKeeper.rotate();
+        bufferedReader = new BufferedReader(fileReader);
       }
     }
   }
