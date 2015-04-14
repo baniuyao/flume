@@ -27,7 +27,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by yaorenjie on 4/14/15.
+ * Tests for {@link org.apache.flume.source.tail.TailProcess}
  */
 public class TestTailProcess {
   private static final Logger LOG = LoggerFactory.getLogger(TestTailProcess.class);

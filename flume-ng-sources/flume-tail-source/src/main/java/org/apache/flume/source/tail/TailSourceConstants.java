@@ -17,7 +17,7 @@
 package org.apache.flume.source.tail;
 
 /**
- * Created by ybaniu on 12/1/14.
+ * Constants used in flume configuration.
  */
 public class TailSourceConstants {
   public static final String FILE_NAME = "file.name";
@@ -28,5 +28,4 @@ public class TailSourceConstants {
   public static final Integer DEFAULT_BATCH_SIZE = 1;
   public static final Long DEFAULT_BATCH_TIME_SEC = 1000L;
   public static Integer DEFAULT_MAX_OFFSET_FILE_SIZE_MB = 128;
-//    public static final Long DEFAULT_BATCH_TIME_LIMIT           = 300L;
 }

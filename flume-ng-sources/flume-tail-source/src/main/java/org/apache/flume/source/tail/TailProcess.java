@@ -23,7 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 
 /**
- * Created by ybaniu on 12/16/14.
+ * This class is used to run the main tail method. It will update offset using
+ * {@link org.apache.flume.source.tail.TailOffsetKeeper}. Furthermore, it will
+ * check log file rotation by checking file size.
  */
 public class TailProcess {
   private static final Logger LOG = LoggerFactory.getLogger(TailProcess.class);

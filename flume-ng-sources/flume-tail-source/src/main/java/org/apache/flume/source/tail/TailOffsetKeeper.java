@@ -42,8 +42,6 @@ public class TailOffsetKeeper {
   public void updateOffset(Integer offset) throws IOException {
     // TODO: offset file rotate
     Long ts = System.currentTimeMillis();
-//    if (System.currentTimeMillis() - TailSourceUtils.getFileCreationTime(offsetFile) > 30000) {
-//    LOG.debug("size: {}", FileUtils.sizeOf(offsetFile));
     if (FileUtils.sizeOf(offsetFile) > 1024 * maxSizeMB) {
       LOG.debug("offset file rotated");
       FileUtils.deleteQuietly(offsetFile);

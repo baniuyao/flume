@@ -20,12 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-
 /**
- * Created by ybaniu on 12/1/14.
+ * static utils
  */
 public class TailSourceUtils {
   private static final Logger LOG = LoggerFactory.getLogger(TailSourceUtils.class);
@@ -44,14 +40,4 @@ public class TailSourceUtils {
     return lastLine;
   }
 
-  public static Long getFileCreationTime(File file) {
-    Long result = 0L;
-    try {
-      BasicFileAttributes attr = Files.readAttributes(Paths.get(file.getAbsolutePath()), BasicFileAttributes.class);
-      result = attr.creationTime().toMillis();
-    } catch (IOException e) {
-      LOG.error("getFileCreationTime IOException: {}", file.getAbsoluteFile());
-    }
-    return result;
-  }
 }

@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 /**
- * Created by yaorenjie on 4/13/15.
+ * Tests for {@link org.apache.flume.source.tail.TailSource}
  */
 public class TestTailSource {
   private static final Logger LOG = LoggerFactory.getLogger(TestTailSource.class);

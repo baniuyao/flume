@@ -27,7 +27,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by yaorenjie on 4/14/15.
+ * Tests for {@link org.apache.flume.source.tail.TailSourceUtils}
  */
 public class TestTailSourceUtils {
   @Test
