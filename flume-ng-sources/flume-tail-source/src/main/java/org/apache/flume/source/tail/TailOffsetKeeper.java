@@ -36,13 +36,17 @@ public class TailOffsetKeeper {
 
   public TailOffsetKeeper(String offsetFileName, Integer maxSizeMB) {
     this.offsetFile = new File(offsetFileName);
+    try {
+      FileUtils.touch(offsetFile);
+    } catch (IOException e) {
+      LOG.error("create offset file error");
+    }
     this.currentOffset = getLatestOffset();
     this.maxSizeMB = maxSizeMB;
   }
 
   public void updateOffset(Integer offset) throws IOException {
     // TODO: offset file rotate
-    Long ts = System.currentTimeMillis();
     if (FileUtils.sizeOf(offsetFile) > 1024 * maxSizeMB) {
       LOG.debug("offset file rotated");
       FileUtils.deleteQuietly(offsetFile);

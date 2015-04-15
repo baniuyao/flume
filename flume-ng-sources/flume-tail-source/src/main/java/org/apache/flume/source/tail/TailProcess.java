@@ -62,6 +62,7 @@ public class TailProcess {
 
 
   private void checkFileRotate() {
+    // flume found the log file missing, waiting for new log file.
     if (!file.exists()) {
       LOG.info("file does not exist");
       LOG.debug("begin loop");
@@ -69,7 +70,7 @@ public class TailProcess {
         try {
           Thread.sleep(1000L);
         } catch (InterruptedException e) {
-          // TODO: how to handle this exception?
+          // it should not happened
           LOG.error("thread sleep error");
         }
         LOG.debug("wait");
@@ -87,6 +88,7 @@ public class TailProcess {
           break;
         }
       }
+      // flume didn't found the log file missing. it need to check the file size
     } else {
       if (FileUtils.sizeOf(file) < fileSize) {
         try {

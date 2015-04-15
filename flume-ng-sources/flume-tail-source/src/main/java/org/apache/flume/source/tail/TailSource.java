@@ -61,7 +61,7 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
         return Status.BACKOFF;
       }
       if (currentLine != null) {
-        LOG.debug("tailOneLine: {}", currentLine);
+        LOG.debug("get one line: {}", currentLine);
         event = EventBuilder.withBody(currentLine.getBytes());
         eventList.add(event);
         try {
