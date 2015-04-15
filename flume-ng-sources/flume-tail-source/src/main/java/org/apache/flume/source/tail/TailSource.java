@@ -36,6 +36,14 @@ import java.util.List;
  * We can use {@link org.apache.flume.source.ExecSource} with running "tail -F" to do this.
  * But using "tail -F" has a fetal problem - it cannot continously feed lines after restart
  * flume. Now this class will write offset information to an offset file to track this.
+ *
+ * <tt>file.name</tt> the absolute path of file to tail
+ * <p>
+ * <tt>batch.size</tt> source will send to channel after get N lines. N is the batch.size
+ * <p>
+ * <tt>batch.time.sec</tt> source will send to channel after N sec. N is the batch.time.sec
+ * <p>
+ * <tt>offset.max.size.mb</tt> offset files will rotate while it is over the max size.
  */
 
 public class TailSource extends AbstractSource implements Configurable, PollableSource {
