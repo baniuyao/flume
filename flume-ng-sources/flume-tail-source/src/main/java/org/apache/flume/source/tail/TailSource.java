@@ -99,7 +99,7 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
         try {
           currentLine = tailProcess.tailOneLine();
         } catch (IOException e) {
-          e.printStackTrace();
+          LOG.error("tailOneLine IOException: {}", e.getMessage());
         }
         if (currentLine == null) {
           if (lastLineTime != null) {
@@ -114,7 +114,7 @@ public class TailSource extends AbstractSource implements Configurable, Pollable
           try {
             tailProcess.commit();
           } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("cannot commit tail: {}", e.getMessage());
           }
           // get a new line
           if (TailSourceUtils.isNewLine(regexPattern, currentLine)) {
