@@ -16,10 +16,15 @@
  */
 package org.apache.flume.source.tail;
 
+import org.apache.flume.Event;
+import org.apache.flume.event.EventBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * static utils
@@ -39,6 +44,28 @@ public class TailSourceUtils {
       LOG.error("readLastLineFormat IOException: {}", file.getAbsoluteFile());
     }
     return lastLine;
+  }
+
+  public static List<Event> generateEventList(Pattern regexPattern, List<String> lineList) {
+    List<Event> eventList = new ArrayList<Event>();
+    String resultLine = "";
+    for (String line : lineList) {
+      if (TailSourceUtils.isNewLine(regexPattern, line)) {
+        if (!resultLine.equals("")) {
+          eventList.add(EventBuilder.withBody(resultLine.getBytes()));
+          LOG.debug("merge line: {}", resultLine);
+        }
+        resultLine = line;
+      } else {
+        resultLine += "\n" + line;
+      }
+    }
+    eventList.add(EventBuilder.withBody(resultLine.getBytes()));
+    return eventList;
+  }
+
+  public static boolean isNewLine(Pattern pattern, String line) {
+    return pattern.matcher(line).find();
   }
 
 }

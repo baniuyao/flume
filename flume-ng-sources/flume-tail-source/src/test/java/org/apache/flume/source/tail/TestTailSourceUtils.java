@@ -19,10 +19,16 @@
 package org.apache.flume.source.tail;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.flume.Event;
+import org.apache.flume.event.EventBuilder;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,6 +36,7 @@ import static org.junit.Assert.assertEquals;
  * Tests for {@link org.apache.flume.source.tail.TailSourceUtils}
  */
 public class TestTailSourceUtils {
+
   @Test
   public void testReadLastLineFromFile() throws IOException {
     File file = new File("/tmp/readLastLine.log");
@@ -37,5 +44,25 @@ public class TestTailSourceUtils {
     FileUtils.writeStringToFile(file, "second line\n", true);
     FileUtils.writeStringToFile(file, "third line\n", true);
     assertEquals("third line", TailSourceUtils.readLastLineFromFile(file));
+  }
+
+  @Test
+  public void testGenerateEventList() {
+    Pattern pattern = Pattern.compile("start.*");
+    List<String> lineList = new ArrayList<String>();
+    lineList.add("start frank\n");
+    lineList.add("start tony\n");
+    lineList.add("\tjohn\n");
+    lineList.add("\tjohnny\n");
+    lineList.add("start jack\n");
+    List<Event> expectedEventList = new ArrayList<Event>();
+    expectedEventList.add(EventBuilder.withBody("start frank\n".getBytes()));
+    expectedEventList.add(EventBuilder.withBody("start tony\n\n\tjohn\n\n\tjohnny\n".getBytes()));
+    expectedEventList.add(EventBuilder.withBody("start jack\n".getBytes()));
+    List<Event> eventList = TailSourceUtils.generateEventList(pattern, lineList);
+    assertEquals(expectedEventList.size(), eventList.size());
+    for (int i=0; i<expectedEventList.size(); i++) {
+      assertEquals(new String(expectedEventList.get(i).getBody()), new String(eventList.get(i).getBody()));
+    }
   }
 }

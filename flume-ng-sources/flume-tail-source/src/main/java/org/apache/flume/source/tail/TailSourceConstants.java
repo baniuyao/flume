@@ -24,8 +24,7 @@ public class TailSourceConstants {
   public static final String BATCH_SIZE = "batch.size";
   public static final String BATCH_TIME_SEC = "batch.time.sec";
   public static final String MAX_OFFSET_FILE_SIZE_MB = "offset.max.size.mb";
+  public static final String LINE_REGEX = "regex";
 
-  public static final Integer DEFAULT_BATCH_SIZE = 1;
-  public static final Long DEFAULT_BATCH_TIME_SEC = 1000L;
   public static Integer DEFAULT_MAX_OFFSET_FILE_SIZE_MB = 128;
 }
